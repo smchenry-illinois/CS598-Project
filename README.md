@@ -1,4 +1,21 @@
-# Medical-Record-Linkage-Ensemble
+# Medical-Record-Linkage-Ensemble-Adaptation
+
+This repository is an adaptation of the work originally performed by Vo et al., "Statistical supervised meta-ensemble algorithm for data linkage", published in Journal of Biomedical Informatics.
+
+The original work is publicly available online via [Journal of Biomedical Informatics](https://doi.org/10.1016/J.JBI.2019.103220).
+
+The original publication's accompanying code and data sets are publicly available on the work's [github repository](https://github.com/ePBRN/Medical-Record-Linkage-Ensemble/)
+
+### A Note on Data Privacy and Security
+
+The patient data sets used in this project are synthetic and do not contain PHI. Both data sets are publicly available via FERBL and ePBRN. See the original work for details regarding these data sets.
+
+## README.md TODO
+
+Rewrite the README file to meet the rubric specification.
+
+## Requirements
+***The following content is directly from the README of the original work. The steps to reproduce the results from the original work are still correct for this adaptation. The content will be updated at a later time.***
 
 This repository contains the full code of the paper "Statistical supervised meta-ensemble algorithm for data linkage", published in Journal of Biomedical Informatics. 
 
