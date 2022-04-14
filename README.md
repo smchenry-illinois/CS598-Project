@@ -8,7 +8,7 @@ The original publication's accompanying code and data sets are publicly availabl
 
 ### A Note on Data Privacy and Security
 
-The patient data sets used in this project are synthetic and do not contain PHI. Both data sets are publicly available via FERBL and ePBRN. See the original work for details regarding these data sets.
+The patient data sets used in this project are synthetic and do not contain PHI. Both data sets are publicly available via FEBRL and ePBRN. See the original work for details regarding these data sets.
 
 ## README.md TODO
 
