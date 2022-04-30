@@ -51,6 +51,11 @@ argumentParser.add_argument("-v", "--verbose",
 
 args = argumentParser.parse_args()
 
+# The reference implementation contains some sections of code which cause a benign FutureWarning to be
+# written to output; we ignore FutureWarning here as to not clutter the console.
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 # Import the general numeric and data manipulation libraries we'll be using
 import numpy as np
 import pandas as pd
@@ -88,26 +93,35 @@ b_y_train_tensor = None
 b_x_test_tensor = None
 b_y_test_tensor = None
 
+print("")
 status.Print("===== DATASET LOADING AND PROCESSING =====")
 
 if(args.data == True):
     # Reprocess the data sets from scratch
-    print("STATUS: Processing source datasets (this may take a few minutes)... ", end="")
+    status.Print("Processing source datasets (this may take a few minutes)...")
 
     if(argumentSchemeA in args.scheme):
-        # The following dataset construction routine is taken from the original authors' implementation
+        # The following dataset construction routine is adapted from the original authors' implementation
         # Construct the training and test data sets for Scheme A from file
+        status.Print("Processing Scheme A datasets...")
+
         a_trainset = "febrl3_UNSW"
         a_testset = "febrl4_UNSW"
 
         ## TRAIN SET CONSTRUCTION
         # Import the training data set from file
-        print("Import train set...")
+        status.Print("Importing the raw training dataset from file...")
         a_df_train = pd.read_csv(a_trainset+".csv", index_col = "rec_id")
         a_train_true_links = FEBRL.generate_true_links(a_df_train)
-        print("Train set size:", len(a_df_train), ", number of matched pairs: ", str(len(a_train_true_links)))
+        status.Print("Raw training dataset loaded; statistics:")
+
+        status.Indent()
+        status.Print("Raw training dataset size: {}".format(len(a_df_train)), prependTimestamp=False)
+        status.Print("Raw training dataset matched pairs: {}".format(len(a_train_true_links)), prependTimestamp=False)
+        status.Unindent()
 
         # Convert the postcode field to a string and append phonetically normalized given name/surname fields
+        status.Print("Performing feature extraction on the raw training dataset...")
         a_df_train['postcode'] = a_df_train['postcode'].astype(str)
         a_df_train['given_name_soundex'] = FEBRL.phonetic(a_df_train['given_name'], method='soundex')
         a_df_train['given_name_nysiis'] = FEBRL.phonetic(a_df_train['given_name'], method='nysiis')
@@ -117,32 +131,53 @@ if(args.data == True):
         # Generate the training feature vector matrix and corresponding labels
         a_x_train, a_y_train = FEBRL.generate_train_X_y(a_df_train, a_train_true_links)
 
+        status.Print("Training dataset feature vector construction complete.")
+        print("")
+
         ## TEST SET CONSTRUCTION
         # Import the test data set from file
-        print("Import test set...")
+        status.Print("Importing the raw test dataset from file...")
         a_df_test = pd.read_csv(a_testset+".csv", index_col = "rec_id")
         a_test_true_links = FEBRL.generate_true_links(a_df_test)
         a_leng_test_true_links = len(a_test_true_links)
-        print("Test set size:", len(a_df_test), ", number of matched pairs: ", str(a_leng_test_true_links))
+        status.Print("Raw test dataset loaded; statistics:")
+
+        status.Indent()
+        status.Print("Raw test dataset size: {}".format(len(a_df_test)), prependTimestamp=False)
+        status.Print("Raw test dataset matchable pairs: {}".format(a_leng_test_true_links), prependTimestamp=False)
+        status.Unindent()
 
         # Perform blocking on the test dataset to identify candidate pairs
-        print("BLOCKING PERFORMANCE:")
+        status.Print("Performing blocking on the test dataset...")
         a_blocking_fields = ["given_name", "surname", "postcode"]
         a_all_candidate_pairs = []
+
+        status.Indent()
         for field in a_blocking_fields:
             block_indexer = FEBRL.rl.BlockIndex(on=field)
             candidates = block_indexer.index(a_df_test)
             a_detects = FEBRL.blocking_performance(candidates, a_test_true_links, a_df_test)
             a_all_candidate_pairs = candidates.union(a_all_candidate_pairs)
-            print("Number of pairs of matched "+ field +": "+str(len(candidates)), ", detected ",
-                a_detects,'/'+ str(a_leng_test_true_links) + " true matched pairs, missed " + 
-                str(a_leng_test_true_links-a_detects) )
+
+            status.Print("Number of paires matched on field '{}': {}; detected {} of {} true matched pairs; missed {}.".format(
+                field,
+                len(candidates),
+                a_detects,
+                a_leng_test_true_links,
+                (a_leng_test_true_links - a_detects)), prependTimestamp=False)
+
         a_detects = FEBRL.blocking_performance(a_all_candidate_pairs, a_test_true_links, a_df_test)
-        print("Number of pairs of at least 1 field matched: " + str(len(a_all_candidate_pairs)), ", detected ",
-            a_detects,'/'+ str(a_leng_test_true_links) + " true matched pairs, missed " + 
-                str(a_leng_test_true_links-a_detects) )
+
+        status.Print("Number of pairs of at least 1 matched field: {}; detected {} of {} true matched pairs; missed {}.".format(
+            len(a_all_candidate_pairs),
+            a_detects,
+            a_leng_test_true_links,
+            (a_leng_test_true_links - a_detects)), prependTimestamp=False)
+
+        status.Unindent()
 
         # Convert the postcode field to a string and append phonetically normalized given name/surname fields
+        status.Print("Performing feature extraction on the raw test dataset...")
         a_df_test['postcode'] = a_df_test['postcode'].astype(str)
         a_df_test['given_name_soundex'] = FEBRL.phonetic(a_df_test['given_name'], method='soundex')
         a_df_test['given_name_nysiis'] = FEBRL.phonetic(a_df_test['given_name'], method='nysiis')
@@ -150,7 +185,6 @@ if(args.data == True):
         a_df_test['surname_nysiis'] = FEBRL.phonetic(a_df_test['surname'], method='nysiis')
 
         # Generate the test feature vector matrix and corresponding labels
-        print("Extract feature vectors...")
         a_df_x_test = FEBRL.extract_features(a_df_test, a_all_candidate_pairs)
         a_vectors = a_df_x_test.values.tolist()
         a_labels = [0]*len(a_vectors)
@@ -161,8 +195,19 @@ if(args.data == True):
         a_x_test, a_y_test = FEBRL.shuffle(a_vectors, a_labels, random_state=0)
         a_x_test = np.array(a_x_test)
         a_y_test = np.array(a_y_test)
-        print("Count labels of y_test:",FEBRL.collections.Counter(a_y_test))
-        print("Finished building X_test, y_test")
+
+        status.Print("Test dataset feature vector construction complete.")
+        print("")
+
+        status.Print("Scheme A dataset statistics:")
+
+        status.Indent()
+        status.Print("Training dataset size: {}".format(len(a_x_train)), prependTimestamp=False)
+        status.Print("Test dataset size: {}".format(len(a_x_test)), prependTimestamp=False)
+        status.Print("Number of features: {}".format(a_x_train.shape[1]), prependTimestamp=False)
+        status.Unindent()
+
+        print("")
 
 else:
     # Load the pre-processed datasets
@@ -182,6 +227,8 @@ else:
         b_x_test = np.load("pre/b_x_test.npy")
         b_y_test = np.load("pre/b_y_test.npy")
 
+    print("")
+
 # Convert the numpy arrays into tensors for the student implementation
 if((argumentSchemeA in args.scheme) and (argumentImplementationStudent in args.implementation)):
     a_x_train_tensor = torch.from_numpy(a_x_train).float()
@@ -194,8 +241,6 @@ if((argumentSchemeA in args.scheme) and (argumentImplementationStudent in args.i
     #b_y_train_tensor = torch.from_numpy(b_y_train).float()
     #b_x_test_tensor = torch.from_numpy(b_x_test).float()
     #b_y_test_tensor = torch.from_numpy(b_y_test).long()
-
-print("")
 
 # Evaluate the specified models
 if(argumentSchemeA in args.scheme):
