@@ -1,3 +1,16 @@
+#####################################################
+#   CS598 DL4H Spring 2022 Reproducibility Project  #
+# ------------------------------------------------- #
+#   StatusPrinter.py                                #
+# ------------------------------------------------- #
+#   Group ID: 72, ID: Paper 252                     #
+#   Steve McHenry, William Plefka                   #
+#   {mchenry7, wplefka2}@illinois.edu               #
+#===================================================#
+#   Module containing utility class for pretty      #
+#   printing to output                              #
+#####################################################
+
 import datetime
 
 class StatusPrinter:
