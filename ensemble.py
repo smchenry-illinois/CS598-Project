@@ -1,4 +1,19 @@
+#####################################################
+#   CS598 DL4H Spring 2022 Reproducibility Project  #
+# ------------------------------------------------- #
+#   ensemble.py                                     #
+# ------------------------------------------------- #
+#   Group ID: 72, ID: Paper 252                     #
+#   Steve McHenry, William Plefka                   #
+#   {mchenry7, wplefka2}@illinois.edu               #
+#===================================================#
+#   Main program file. Execute this file with       #
+#   argument "-h" for a listing of the execution    #
+#   options.                                        #
+#####################################################
+
 import argparse
+from re import escape
 
 # Parse any command line arguments
 argumentParser = argparse.ArgumentParser()
@@ -73,8 +88,18 @@ status = StatusPrinter.StatusPrinter()
 if(argumentSchemeA in args.scheme):
     import FEBRL
 
+    if(argumentImplementationStudent in args.implementation):
+        import FEBRLStudentImplementation as fs
+
 if(argumentSchemeB in args.scheme):
     import ePBRN
+
+    if(argumentImplementationStudent in args.implementation):
+        import ePBRNStudentImplementation as es
+
+# Start the timer to measure the total CPU time of execution
+import time
+execution_time_start = time.process_time()
 
 # Load the datasets, either as pre-processed data or from scratch, as specified by the user
 a_x_train = None
@@ -352,7 +377,7 @@ if(argumentSchemeA in args.scheme):
     if(argumentImplementationReference in args.implementation):
         # Evaluate the Scheme A dataset against the reference implementation
         print("")
-        status.Print("===== MODEL EVALUATION (REFERENCE IMPLEMENTATION) =====")
+        status.Print("===== SCHEME A MODEL EVALUATION (REFERENCE IMPLEMENTATION) =====")
 
         a_modeltypes = ['svm', 'nn', 'lg'] 
         a_modeltypes_2 = ['linear', 'relu', 'l2']
@@ -500,8 +525,9 @@ if(argumentSchemeA in args.scheme):
         print("")
 
         if(args.search == True):
+            # Perform the hyperparameter grid search for the reference implementation against Scheme A
             print("")
-            status.Print("===== HYPERPARAMETER SEARCH (REFERENCE IMPLEMENTATION)=====")
+            status.Print("===== SCHEME A HYPERPARAMETER SEARCH (REFERENCE IMPLEMENTATION)=====")
 
             a_modelparam_param = ['C', 'alpha', 'C']
             modelparam_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]
@@ -529,16 +555,14 @@ if(argumentSchemeA in args.scheme):
                                     final_eval["F-score"])
 
                     status.Print(message, prependTimestamp=False)
-                    print("")
 
                 status.Unindent()
+                print("")
 
     if(argumentImplementationStudent in args.implementation):
         # Evaluate the Scheme A dataset against the student implementation
-        import FEBRLStudentImplementation as fs
-
         print("")
-        status.Print("===== MODEL EVALUATION (STUDENT IMPLEMENTATION) =====")
+        status.Print("===== SCHEME A MODEL EVALUATION (STUDENT IMPLEMENTATION) =====")
 
         a_modeltypes = ['svm', 'nn', 'lg']
         a_base_learner_count = 10
@@ -601,7 +625,7 @@ if(argumentSchemeA in args.scheme):
                     #pickle.dump(a_base_learners_nn, open("pre/a_model_student_nn.pkl", mode='wb'))
 
                 #if(modeltype == 'lg'):
-                   #pickle.dump(a_base_learners_lg, open("pre/a_model_student_lg.pkl", mode='wb'))
+                    #pickle.dump(a_base_learners_lg, open("pre/a_model_student_lg.pkl", mode='wb'))
 
             status.Unindent()
 
@@ -713,8 +737,9 @@ if(argumentSchemeA in args.scheme):
         print("")
 
         if(args.search == True):
+            # Perform the hyperparameter grid search for the student implementation against Scheme A
             print("")
-            status.Print("===== HYPERPARAMETER SEARCH (STUDENT IMPLEMENTATION)=====")
+            status.Print("===== SCHEME A HYPERPARAMETER SEARCH (STUDENT IMPLEMENTATION)=====")
 
             # Perform SVM base learner evaluation using the hyperparameter search range provided by the original paper
             frs_inverse_reg_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]
@@ -816,3 +841,485 @@ if(argumentSchemeA in args.scheme):
 
             status.Unindent()
             print("")
+
+if(argumentSchemeB in args.scheme):
+
+    if(argumentImplementationReference in args.implementation):
+        # Evaluate the Scheme B dataset against the reference implementation
+        print("")
+        status.Print("===== SCHEME B MODEL EVALUATION (REFERENCE IMPLEMENTATION) =====")
+
+        b_modeltypes = ['svm', 'nn', 'lg'] 
+        b_modeltypes_2 = ['rbf', 'relu', 'l2']
+        b_modelparams = [0.001, 2000, 0.005]
+        b_nFold = 10
+        b_kf = KFold(n_splits=b_nFold)
+        b_model_raw_score = [0]*3
+        b_model_binary_score = [0]*3
+        b_model_i = 0
+
+        b_base_learners_svm = [None] * b_nFold
+        b_base_learners_nn = [None] * b_nFold
+        b_base_learners_lg = [None] * b_nFold
+        
+        if(args.train == True):
+            # Train the base learners from scratch
+            status.Print("Training reference implementation against Scheme B...")
+
+            status.Indent()
+            for b_model_i in range(3):
+                
+                modeltype = b_modeltypes[b_model_i]
+                modeltype_2 = b_modeltypes_2[b_model_i]
+                modelparam = b_modelparams[b_model_i]
+
+                message = "Training {} reference implementation base learners...".format(modeltype)
+                status.Print(message)
+
+                iFold = 0
+                result_fold = [0]*b_nFold
+                final_eval_fold = [0]*b_nFold
+
+                base_learner = [None] * b_nFold
+
+                for train_index, valid_index in b_kf.split(b_x_train):
+                    X_train_fold = b_x_train[train_index]
+                    y_train_fold = b_y_train[train_index]
+                    
+                    md = ePBRN.train_model(modeltype, modelparam, X_train_fold, y_train_fold, modeltype_2)
+                    base_learner[iFold] = md
+                    iFold = iFold + 1
+
+                # The following commented lines can be enabled to write this execution's trained models to file
+                if(modeltype == 'svm'):
+                    b_base_learners_svm = copy.deepcopy(base_learner)
+                    #pickle.dump(b_base_learners_svm, open("pre/b_model_reference_svm.pkl", mode='wb'))
+
+                elif(modeltype == 'nn'):
+                    b_base_learners_nn = copy.deepcopy(base_learner)
+                    #pickle.dump(b_base_learners_nn, open("pre/b_model_reference_nn.pkl", mode='wb'))
+
+                elif(modeltype == 'lg'):
+                    b_base_learners_lg = copy.deepcopy(base_learner)
+                    #pickle.dump(b_base_learners_lg, open("pre/b_model_reference_lg.pkl", mode='wb'))
+            
+            status.Unindent()
+
+        else:
+            # Load the pre-trained models
+            status.Print("Loading pre-trained reference implementation Scheme B...")
+
+            b_base_learners_svm = pickle.load(open("pre/b_model_reference_svm.pkl", mode='rb'))
+            b_base_learners_nn = pickle.load(open("pre/b_model_reference_nn.pkl", mode='rb'))
+            b_base_learners_lg = pickle.load(open("pre/b_model_reference_lg.pkl", mode='rb'))
+
+        status.Print("Evaluating the reference implementation against Scheme B...")
+
+        # Evaluate the dataset against the base learners
+        for b_model_i in range(3):
+            modeltype = b_modeltypes[b_model_i]
+
+            message = "Evaluating dataset against {} reference implementation base learners...".format(modeltype)
+            status.Print(message)
+
+            base_learner = None
+
+            if(modeltype == 'svm'):
+                base_learner = b_base_learners_svm
+            elif(modeltype == 'nn'):
+                base_learner = b_base_learners_nn
+            elif(modeltype == 'lg'):
+                base_learner = b_base_learners_lg
+            
+            result_fold = [0]*b_nFold
+            final_eval_fold = [0]*b_nFold
+
+            status.Indent()
+            for b_base_learner_i in np.arange(b_nFold):
+
+                result_fold[b_base_learner_i] = ePBRN.classify(base_learner[b_base_learner_i], b_x_test)
+                final_eval_fold[b_base_learner_i] = ePBRN.evaluation(b_y_test, result_fold[b_base_learner_i])
+
+                if(args.verbose == True):
+                    message = "Base learner {}: {}".format(str(b_base_learner_i), final_eval_fold[b_base_learner_i])
+                else:
+                    message = "Base learner {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(
+                                str(b_base_learner_i),
+                                final_eval_fold[b_base_learner_i]["precision"],
+                                final_eval_fold[b_base_learner_i]["sensitivity"],
+                                final_eval_fold[b_base_learner_i]["F-score"])
+
+                status.Print(message, prependTimestamp=False)
+
+            bagging_raw_score = np.average(result_fold, axis=0)
+            bagging_binary_score  = np.copy(bagging_raw_score)
+            bagging_binary_score[bagging_binary_score > 0.5] = 1
+            bagging_binary_score[bagging_binary_score <= 0.5] = 0
+            bagging_eval = ePBRN.evaluation(b_y_test, bagging_binary_score)
+            
+            if(args.verbose == True):
+                message = "{} bagging: {}".format(modeltype, bagging_eval)
+            else:
+                message = "{} bagging: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(
+                            modeltype,
+                            bagging_eval["precision"],
+                            bagging_eval["sensitivity"],
+                            bagging_eval["F-score"])
+
+            status.Print(message, prependTimestamp=False)
+            print("")
+
+            status.Unindent()
+
+            b_model_raw_score[b_model_i] = bagging_raw_score
+            b_model_binary_score[b_model_i] = bagging_binary_score
+
+        # Perform ensemble stacking
+        b_thres = .99
+
+        b_stack_raw_score = np.average(b_model_raw_score, axis=0)
+        b_stack_binary_score = np.copy(b_stack_raw_score)
+        b_stack_binary_score[b_stack_binary_score > b_thres] = 1
+        b_stack_binary_score[b_stack_binary_score <= b_thres] = 0
+        b_stacking_eval = ePBRN.evaluation(b_y_test, b_stack_binary_score)
+
+        status.Print("Reference Implementation Scheme A stacking performance:")
+
+        if(args.verbose == True):
+            message = "{}".format(b_stacking_eval)
+        else:
+            message = "precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(
+                        b_stacking_eval["precision"],
+                        b_stacking_eval["sensitivity"],
+                        b_stacking_eval["F-score"])
+
+        status.Print(message, prependTimestamp=False)
+        print("")
+  
+        if(args.search == True):
+            # Perform the hyperparameter grid search for the reference implementation against Scheme B
+            print("")
+            status.Print("===== SCHEME B HYPERPARAMETER SEARCH (REFERENCE IMPLEMENTATION)=====")
+
+            b_modelparam_param = ['C', 'alpha', 'C']
+            modelparam_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]
+
+            for b_model_i in np.arange(3):
+                modeltype = b_modeltypes[b_model_i]
+                modeltype_2 = b_modeltypes_2[b_model_i]
+                
+                status.Print("Performing hyperparameter search for {} (L2 regulizer)...".format(modeltype))
+                status.Indent()
+
+                for modelparam in modelparam_range:
+                    md = ePBRN.train_model(modeltype, modelparam, b_x_train, b_y_train, modeltype_2)
+                    final_result = ePBRN.classify(md, b_x_test)
+                    final_eval = ePBRN.evaluation(b_y_test, final_result)
+
+                    if(args.verbose == True):
+                        message = "{} = {}: {}".format(b_modelparam_param[b_model_i], modelparam, final_eval)
+                    else:
+                        message = "{} = {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(
+                                    b_modelparam_param[b_model_i],
+                                    modelparam,
+                                    final_eval["precision"],
+                                    final_eval["sensitivity"],
+                                    final_eval["F-score"])
+
+                    status.Print(message, prependTimestamp=False)
+
+                status.Unindent()
+                print("")
+
+    if(argumentImplementationStudent in args.implementation):
+        # Evaluate the Scheme B dataset against the student implementation
+        print("")
+        status.Print("===== SCHEME B MODEL EVALUATION (STUDENT IMPLEMENTATION) =====")
+
+        b_modeltypes = ['svm', 'nn', 'lg']
+        b_base_learner_count = 10
+        b_base_learners_svm = [None] * b_base_learner_count
+        b_base_learners_nn = [None] * b_base_learner_count
+        b_base_learners_lg = [None] * b_base_learner_count
+
+        # For SVM, shift our data from its native range of [0.0, 1.0] to [-1.0, 1.0]
+        b_x_train_tensor_svm = (b_x_train_tensor * 2) - 1
+        b_y_train_tensor_svm = (b_y_train_tensor * 2) - 1
+        b_x_test_tensor_svm = (b_x_test_tensor * 2) - 1
+        b_y_test_tensor_svm = (b_y_test_tensor * 2) - 1
+
+        # Selected hyperparameters, determined through grid search
+        ers_inverse_reg_optimal = 1000  
+        ern_weight_decay_optimal = 0.4
+        erl_inverse_reg_optimal = 0.5
+
+        if(args.train == True):
+            # Train the base learners from scratch
+            status.Print("Training student implementation against Scheme B...")
+
+            status.Indent()
+            for b_model_i in np.arange(3):
+                # Perform bagging across 10 base learners by using shuffled kfold as our sampling strategy for
+                # bootstrapping
+                modeltype = b_modeltypes[b_model_i]
+                status.Print("Training {} student implementation base learners... ".format(modeltype))
+
+                ers_kfold_count = b_base_learner_count
+                ers_kfold = KFold(n_splits=ers_kfold_count, shuffle=True, random_state=12345)
+                ers_kfold_i = 0
+
+                ers_results = [0] * ers_kfold_count
+
+                for train_indicies, _ in ers_kfold.split(b_x_train):
+
+                    if(modeltype == 'svm'):
+                        epbrn_reproducer_svm = es.ePBRNReproducerSVM(num_features=b_x_train_tensor.shape[1], inverse_reg=ers_inverse_reg_optimal)
+                        epbrn_reproducer_svm.fit(b_x_train_tensor_svm[train_indicies], b_y_train_tensor_svm[train_indicies])
+                        b_base_learners_svm[ers_kfold_i] = epbrn_reproducer_svm
+
+                    elif(modeltype == 'nn'):
+                        epbrn_reproducer_nn = es.ePBRNReproducerNN(num_features=b_x_train_tensor.shape[1], weight_decay=ern_weight_decay_optimal)
+                        epbrn_reproducer_nn.fit(b_x_train_tensor[train_indicies], b_y_train_tensor[train_indicies])
+                        b_base_learners_nn[ers_kfold_i] = epbrn_reproducer_nn
+
+                    elif(modeltype == 'lg'):
+                        epbrn_reproducer_lg = es.ePBRNReproducerLR(num_features=b_x_train_tensor.shape[1], inverse_reg=erl_inverse_reg_optimal)
+                        epbrn_reproducer_lg.fit(b_x_train_tensor[train_indicies], b_y_train_tensor[train_indicies])
+                        b_base_learners_lg[ers_kfold_i] = epbrn_reproducer_lg
+
+                    ers_kfold_i = ers_kfold_i + 1             
+
+                # The following section can be enabled to write this execution's trained models to file
+                #if(modeltype == 'svm'):
+                    #pickle.dump(b_base_learners_svm, open("pre/b_model_student_svm.pkl", mode='wb'))
+
+                #if(modeltype == 'nn'):
+                    #pickle.dump(b_base_learners_nn, open("pre/b_model_student_nn.pkl", mode='wb'))
+
+                #if(modeltype == 'lg'):
+                    #pickle.dump(b_base_learners_lg, open("pre/b_model_student_lg.pkl", mode='wb'))
+
+            status.Unindent()
+
+        else:
+            # Load the pre-trained models
+            status.Print("Loading pre-trained student implementation Scheme B...")
+            b_base_learners_svm = pickle.load(open("pre/b_model_student_svm.pkl", mode='rb'))
+            b_base_learners_nn = pickle.load(open("pre/b_model_student_nn.pkl", mode='rb'))
+            b_base_learners_lg = pickle.load(open("pre/b_model_student_lg.pkl", mode='rb'))
+
+        status.Print("Evaluating the student implementation against Scheme B...")
+
+        # Evaluate the dataset against each of the base learners
+        ers_bagging_binary_score = None
+        ern_bagging_binary_score = None
+        erl_bagging_binary_score = None
+
+        for b_model_i in range(3):
+            modeltype = b_modeltypes[b_model_i]
+            
+            message = "Evaluating dataset against {} student implementation base learners...".format(modeltype)
+            status.Print(message)
+
+            base_learner = None
+
+            if(modeltype == 'svm'):
+                base_learner = b_base_learners_svm
+            elif(modeltype == 'nn'):
+                base_learner = b_base_learners_nn
+            elif(modeltype == 'lg'):
+                base_learner = b_base_learners_lg
+
+            er_results = [0] * b_base_learner_count
+            
+            status.Indent()
+            for b_base_learner_i in np.arange(b_base_learner_count):
+
+                y_pred = None
+
+                if(modeltype == 'svm'):
+                    er_results[b_base_learner_i] = base_learner[b_base_learner_i].predict(b_x_test_tensor_svm).detach().numpy()
+                    y_pred = np.asarray([1 if element > 0 else 0 for element in er_results[b_base_learner_i]])
+                else:
+                    er_results[b_base_learner_i] = base_learner[b_base_learner_i].predict(b_x_test_tensor).detach().numpy()
+                    y_pred = np.asarray([1 if element > 0.5 else 0 for element in er_results[b_base_learner_i]])
+
+                # Print the results of the current base learner for convenience
+                message_evaluation = ePBRN.evaluation(b_y_test, y_pred)
+                if(args.verbose == True):
+                    message = "Base learner {}: {}".format(b_base_learner_i, message_evaluation)
+                else:
+                    message = "Base learner {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(str(b_base_learner_i),
+                                message_evaluation["precision"],
+                                message_evaluation["sensitivity"],
+                                message_evaluation["F-score"])
+
+                status.Print(message, prependTimestamp=False)
+  
+            er_bagging_raw_score = np.average(er_results, axis=0)
+            er_bagging_binary_score = np.copy(er_bagging_raw_score)
+
+            if(modeltype == 'svm'):
+                er_bagging_binary_score[er_bagging_binary_score > 0] = 1
+                er_bagging_binary_score[er_bagging_binary_score <= 0] = 0
+            else:
+                er_bagging_binary_score[er_bagging_binary_score > 0.5] = 1
+                er_bagging_binary_score[er_bagging_binary_score <= 0.5] = 0
+
+            er_bagging_evaluation = ePBRN.evaluation(b_y_test, er_bagging_binary_score)
+            
+            if(args.verbose == True):
+                message = "{} bagging: {}".format(modeltype, er_bagging_evaluation)
+            else:
+                message = "{} bagging: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(
+                            modeltype,
+                            er_bagging_evaluation["precision"],
+                            er_bagging_evaluation["sensitivity"],
+                            er_bagging_evaluation["F-score"])
+
+            status.Print(message, prependTimestamp=False)
+            print("")
+
+            status.Unindent()
+
+            if(modeltype == 'svm'):
+                ers_bagging_binary_score = copy.deepcopy(er_bagging_binary_score)
+            elif(modeltype == 'nn'):
+                ern_bagging_binary_score = copy.deepcopy(er_bagging_binary_score)
+            elif(modeltype == 'lg'):
+                erl_bagging_binary_score = copy.deepcopy(er_bagging_binary_score)
+
+        er_stacking_threshold = 0.99
+
+        er_stacking_binary_score = np.average([ers_bagging_binary_score, ern_bagging_binary_score, erl_bagging_binary_score], axis=0)
+        er_stacking_binary_score[er_stacking_binary_score > er_stacking_threshold] = 1
+        er_stacking_binary_score[er_stacking_binary_score <= er_stacking_threshold] = 0
+        er_stacking_evaluation = ePBRN.evaluation(b_y_test, er_stacking_binary_score)
+        
+        status.Print("Student Implementation Scheme B stacking performance:")
+
+        if(args.verbose == True):
+            message = "{}".format(er_stacking_evaluation)
+        else:
+            message = "precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(
+                        er_stacking_evaluation["precision"],
+                        er_stacking_evaluation["sensitivity"],
+                        er_stacking_evaluation["F-score"])
+
+        status.Print(message, prependTimestamp=False)
+        print("")
+
+        if(args.search == True):
+            # Perform the hyperparameter grid search for the reference implementation against Scheme B
+            print("")
+            status.Print("===== SCHEME B HYPERPARAMETER SEARCH (STUDENT IMPLEMENTATION)=====")
+
+            # Perform SVM base learner evaluation using the hyperparameter search range provided by the original paper
+            ers_inverse_reg_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]
+
+            status.Print("Performing hyperparameter search for student implementation Scheme B...")
+
+            status.Print("Performing hyperparameter search for SVM (L2 regulizer)...")
+            status.Indent()
+            for inverse_reg in ers_inverse_reg_range:
+                # Create an instance of the SVM
+                ePBRN_reproducer_svm = es.ePBRNReproducerSVM(num_features=b_x_train_tensor.shape[1], inverse_reg=inverse_reg)
+
+                # Train the model
+                ePBRN_reproducer_svm.fit(b_x_train_tensor_svm, b_y_train_tensor_svm)
+
+                # Test the model
+                ers_output = ePBRN_reproducer_svm.predict(b_x_test_tensor_svm).detach()
+
+                y_pred = np.asarray([1 if element > 0 else 0 for element in ers_output])
+
+                # Print the results
+                message_evaluation = ePBRN.evaluation(b_y_test, y_pred)
+
+                if(args.verbose == True):
+                    message = "inverse_reg = {}: {}".format(inverse_reg, message_evaluation)
+                else:
+                    message = "inverse_reg = {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(inverse_reg,
+                                message_evaluation["precision"],
+                                message_evaluation["sensitivity"],
+                                message_evaluation["F-score"])
+
+                status.Print(message, prependTimestamp=False)
+
+            status.Unindent()
+            print("")
+
+            # Perform NN base learner evaluation using the hyperparameter search range provided by the original paper
+            ern_weight_decay_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]  
+
+            status.Print("Performing hyperparameter search for NN (L2 regulizer)...")
+            status.Indent()
+            for weight_decay in ern_weight_decay_range:
+                # Create an instance of the feed-forward neural network
+                ePBRN_reproducer_nn = es.ePBRNReproducerNN(num_features=b_x_train_tensor.shape[1], weight_decay=weight_decay)
+
+                # Train the model
+                ePBRN_reproducer_nn.fit(b_x_train_tensor, b_y_train_tensor)
+
+                # Test the model
+                ern_output = ePBRN_reproducer_nn.predict(b_x_test_tensor).detach()
+
+                y_pred = np.asarray([1 if element > 0.5 else 0 for element in ern_output])
+
+                # Print the results
+                message_evaluation = ePBRN.evaluation(b_y_test, y_pred)
+
+                if(args.verbose == True):
+                    message = "weight_decay = {}: {}".format(weight_decay, message_evaluation)
+                else:
+                    message = "weight_decay = {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(weight_decay,
+                                message_evaluation["precision"],
+                                message_evaluation["sensitivity"],
+                                message_evaluation["F-score"])
+
+                status.Print(message, prependTimestamp=False)
+
+            # Perform logistic regression base learner evaluation using the hyperparameter search range provided by the original paper
+            erl_inverse_reg_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]
+
+            status.Unindent()
+            print("")
+
+            status.Print("Performing hyperparameter search for Logistic Regression (L2 regulizer)...")
+            status.Indent()
+            for inverse_reg in erl_inverse_reg_range:
+                # Create an instance of the logistic regression model
+                ePBRN_reproducer_lr = es.ePBRNReproducerLR(num_features=b_x_train_tensor.shape[1], inverse_reg=inverse_reg)
+
+                # Train the model
+                ePBRN_reproducer_lr.fit(b_x_train_tensor, b_y_train_tensor)
+
+                # Test the model
+                erl_output = ePBRN_reproducer_lr.predict(b_x_test_tensor).detach()
+
+                y_pred = np.asarray([1 if element > 0.5 else 0 for element in erl_output])
+
+                # Print the results
+                message_evaluation = ePBRN.evaluation(b_y_test, y_pred)
+
+                if(args.verbose == True):
+                    message = "inverse_reg = {}: {}".format(inverse_reg, message_evaluation)
+                else:
+                    message = "inverse_reg = {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(inverse_reg,
+                                message_evaluation["precision"],
+                                message_evaluation["sensitivity"],
+                                message_evaluation["F-score"])
+
+                status.Print(message, prependTimestamp=False)
+
+            status.Unindent()
+            print("")
+
+# Finish by printing the total execution CPU time
+execution_time_end = time.process_time()
+execution_time_total = (execution_time_end - execution_time_start)
+execution_time_minutes = int(np.floor_divide(execution_time_total, 60))
+execution_time_seconds = execution_time_total % 60
+status.Print("Execution CPU time: {} minutes {} seconds".format(execution_time_minutes, execution_time_seconds))
+status.Print("({} seconds)".format(execution_time_total), prependTimestamp=False)
+print("")

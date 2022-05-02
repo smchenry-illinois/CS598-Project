@@ -1,3 +1,17 @@
+#####################################################
+#   CS598 DL4H Spring 2022 Reproducibility Project  #
+# ------------------------------------------------- #
+#   FEBRL.py                                        #
+# ------------------------------------------------- #
+#   Group ID: 72, ID: Paper 252                     #
+#   Steve McHenry, William Plefka                   #
+#   {mchenry7, wplefka2}@illinois.edu               #
+#===================================================#
+#   Module containing dataset processing functions  #
+#   and the reference implementation for the FEBRL  #
+#   dataset (Scheme A)                              #
+#####################################################
+
 # The following dataset construction, blocking, and feature encoding routines are taken from
 # the original authors' implementation
 

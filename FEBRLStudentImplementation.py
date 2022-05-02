@@ -1,3 +1,16 @@
+#####################################################
+#   CS598 DL4H Spring 2022 Reproducibility Project  #
+# ------------------------------------------------- #
+#   FEBRLStudentImplementation.py                   #
+# ------------------------------------------------- #
+#   Group ID: 72, ID: Paper 252                     #
+#   Steve McHenry, William Plefka                   #
+#   {mchenry7, wplefka2}@illinois.edu               #
+#===================================================#
+#   Module containing the student implementation    #
+#   for the FEBRL dataset (Scheme A)                #
+#####################################################
+
 # Import the torch library which we'll use for our implementation
 import torch
 import torch.nn as nn
