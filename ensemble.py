@@ -73,6 +73,9 @@ status = StatusPrinter.StatusPrinter()
 if(argumentSchemeA in args.scheme):
     import FEBRL
 
+if(argumentSchemeB in args.scheme):
+    import ePBRN
+
 # Load the datasets, either as pre-processed data or from scratch, as specified by the user
 a_x_train = None
 a_y_train = None
@@ -100,6 +103,7 @@ status.Print("===== DATASET LOADING AND PROCESSING =====")
 if(args.data == True):
     # Reprocess the data sets from scratch
     status.Print("Processing source datasets (this may take a few minutes)...")
+    print("")
 
     if(argumentSchemeA in args.scheme):
         # The following dataset construction routine is adapted from the original authors' implementation
@@ -133,7 +137,6 @@ if(args.data == True):
         a_x_train, a_y_train = FEBRL.generate_train_X_y(a_df_train, a_train_true_links)
 
         status.Print("Training dataset feature vector construction complete.")
-        print("")
 
         ## TEST SET CONSTRUCTION
         # Import the test data set from file
@@ -210,6 +213,106 @@ if(args.data == True):
 
         print("")
 
+    if(argumentSchemeB in args.scheme):
+        # The following dataset construction routine is adapted from the original authors' implementation
+        # Construct the training and test data sets for Scheme A from file
+        status.Print("Processing Scheme B datasets...")
+
+        b_trainset = 'ePBRN_F_dup' 
+        b_testset = 'ePBRN_D_dup'
+
+        ## TRAIN SET CONSTRUCTION
+        # Import the training data set from file
+        status.Print("Importing the raw training dataset from file...")
+        b_df_train = pd.read_csv(b_trainset+".csv", index_col = "rec_id")
+        b_train_true_links = ePBRN.generate_true_links(b_df_train)
+        status.Print("Raw training dataset loaded; statistics:")
+
+        status.Indent()
+        status.Print("Raw training dataset size: {}".format(len(b_df_train)), prependTimestamp=False)
+        status.Print("Raw training dataset matched pairs: {}".format(len(b_train_true_links)), prependTimestamp=False)
+        status.Unindent()
+
+        # Convert the postcode field to a string
+        status.Print("Performing feature extraction on the raw training dataset...")
+        b_df_train['postcode'] = b_df_train['postcode'].astype(str)
+
+        # Final train feature vectors and labels
+        b_x_train, b_y_train = ePBRN.generate_train_X_y(b_df_train, b_train_true_links)
+        
+        status.Print("Training dataset feature vector construction complete.")
+
+        ## TEST SET CONSTRUCTION
+        # Import the test data set from file
+        status.Print("Importing the raw test dataset from file...")
+        b_df_test = pd.read_csv(b_testset+".csv", index_col = "rec_id")
+        b_test_true_links = ePBRN.generate_true_links(b_df_test)
+        b_leng_test_true_links = len(b_test_true_links)
+        status.Print("Raw test dataset loaded; statistics:")
+
+        status.Indent()
+        status.Print("Raw test dataset size: {}".format(len(b_df_test)), prependTimestamp=False)
+        status.Print("Raw test dataset matchable pairs: {}".format(b_leng_test_true_links), prependTimestamp=False)
+        status.Unindent()
+
+        # Perform blocking on the test dataset to identify candidate pairs
+        status.Print("Performing blocking on the test dataset...")
+        b_blocking_fields = ["given_name", "surname", "postcode"]
+        b_all_candidate_pairs = []
+
+        status.Indent()
+        for field in b_blocking_fields:
+            block_indexer = ePBRN.rl.BlockIndex(on=field)
+            candidates = block_indexer.index(b_df_test)
+            b_detects = ePBRN.blocking_performance(candidates, b_test_true_links, b_df_test)
+            b_all_candidate_pairs = candidates.union(b_all_candidate_pairs)
+
+            status.Print("Number of paires matched on field '{}': {}; detected {} of {} true matched pairs; missed {}.".format(
+                field,
+                len(candidates),
+                b_detects,
+                b_leng_test_true_links,
+                (b_leng_test_true_links - b_detects)), prependTimestamp=False)
+
+        b_detects = ePBRN.blocking_performance(b_all_candidate_pairs, b_test_true_links, b_df_test)
+        
+        status.Print("Number of pairs of at least 1 matched field: {}; detected {} of {} true matched pairs; missed {}.".format(
+            len(b_all_candidate_pairs),
+            b_detects,
+            b_leng_test_true_links,
+            (b_leng_test_true_links - b_detects)), prependTimestamp=False)
+
+        status.Unindent()
+
+        # Convert the postcode field to a string
+        status.Print("Performing feature extraction on the raw test dataset...")
+        b_df_test['postcode'] = b_df_test['postcode'].astype(str)
+
+        # Generate the test feature vector matrix and corresponding labels
+        b_df_x_test = ePBRN.extract_features(b_df_test, b_all_candidate_pairs)
+        b_vectors = b_df_x_test.values.tolist()
+        b_labels = [0]*len(b_vectors)
+        b_feature_index = b_df_x_test.index
+        for i in range(0, len(b_feature_index)):
+            if b_df_test.loc[b_feature_index[i][0]]["match_id"]==b_df_test.loc[b_feature_index[i][1]]["match_id"]:
+                b_labels[i] = 1
+        b_x_test, b_y_test = ePBRN.shuffle(b_vectors, b_labels, random_state=0)
+        b_x_test = np.array(b_x_test)
+        b_y_test = np.array(b_y_test)
+        
+        status.Print("Test dataset feature vector construction complete.")
+        print("")
+
+        status.Print("Scheme B dataset statistics:")
+
+        status.Indent()
+        status.Print("Training dataset size: {}".format(len(b_x_train)), prependTimestamp=False)
+        status.Print("Test dataset size: {}".format(len(b_x_test)), prependTimestamp=False)
+        status.Print("Number of features: {}".format(b_x_train.shape[1]), prependTimestamp=False)
+        status.Unindent()
+
+        print("")
+
 else:
     # Load the pre-processed datasets
     status.Print("Loading preprocessed training and test datasets... ")
@@ -237,11 +340,11 @@ if((argumentSchemeA in args.scheme) and (argumentImplementationStudent in args.i
     a_x_test_tensor = torch.from_numpy(a_x_test).float()
     a_y_test_tensor = torch.from_numpy(a_y_test).long()
 
-#if((argumentSchemeB in args.scheme) and (argumentImplementationStudent in args.implementation)):
-    #b_x_train_tensor = torch.from_numpy(b_x_train).float()
-    #b_y_train_tensor = torch.from_numpy(b_y_train).float()
-    #b_x_test_tensor = torch.from_numpy(b_x_test).float()
-    #b_y_test_tensor = torch.from_numpy(b_y_test).long()
+if((argumentSchemeB in args.scheme) and (argumentImplementationStudent in args.implementation)):
+    b_x_train_tensor = torch.from_numpy(b_x_train).float()
+    b_y_train_tensor = torch.from_numpy(b_y_train).float()
+    b_x_test_tensor = torch.from_numpy(b_x_test).float()
+    b_y_test_tensor = torch.from_numpy(b_y_test).long()
 
 # Evaluate the specified models
 if(argumentSchemeA in args.scheme):
