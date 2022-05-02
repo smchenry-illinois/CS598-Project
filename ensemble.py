@@ -51,10 +51,11 @@ argumentParser.add_argument("-v", "--verbose",
 
 args = argumentParser.parse_args()
 
-# The reference implementation contains some sections of code which cause a benign FutureWarning to be
-# written to output; we ignore FutureWarning here as to not clutter the console.
+# The reference implementation contains some sections of code which cause benign FutureWarnings or
+# RuntimeWarnings to be written to output; we ignore these here as to not clutter the console.
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
 # Import the general numeric and data manipulation libraries we'll be using
 import numpy as np
@@ -395,6 +396,40 @@ if(argumentSchemeA in args.scheme):
         status.Print(message, prependTimestamp=False)
         print("")
 
+        if(args.search == True):
+            print("")
+            status.Print("===== HYPERPARAMETER SEARCH (REFERENCE IMPLEMENTATION)=====")
+
+            a_modelparam_param = ['C', 'alpha', 'C']
+            modelparam_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]
+
+            for a_model_i in np.arange(3):
+                modeltype = a_modeltypes[a_model_i]
+                modeltype_2 = a_modeltypes_2[a_model_i]
+                
+                status.Print("Performing hyperparameter search for {} (L2 regulizer)...".format(modeltype))
+                status.Indent()
+
+                for modelparam in modelparam_range:
+                    md = FEBRL.train_model(modeltype, modelparam, a_x_train, a_y_train, modeltype_2)
+                    final_result = FEBRL.classify(md, a_x_test)
+                    final_eval = FEBRL.evaluation(a_y_test, final_result)
+
+                    if(args.verbose == True):
+                        message = "{} = {}: {}".format(a_modelparam_param[a_model_i], modelparam, final_eval)
+                    else:
+                        message = "{} = {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(
+                                    a_modelparam_param[a_model_i],
+                                    modelparam,
+                                    final_eval["precision"],
+                                    final_eval["sensitivity"],
+                                    final_eval["F-score"])
+
+                    status.Print(message, prependTimestamp=False)
+                    print("")
+
+                status.Unindent()
+
     if(argumentImplementationStudent in args.implementation):
         # Evaluate the Scheme A dataset against the student implementation
         import FEBRLStudentImplementation as fs
@@ -583,7 +618,7 @@ if(argumentSchemeA in args.scheme):
 
             status.Print("Performing hyperparameter search for student implementation Scheme A...")
 
-            status.Print("Performing hyperparameter search for SVM (SGD L2 penalty)...")
+            status.Print("Performing hyperparameter search for SVM (L2 regulizer)...")
             status.Indent()
             for inverse_reg in frs_inverse_reg_range:
                 # Create an instance of the SVM
@@ -611,11 +646,12 @@ if(argumentSchemeA in args.scheme):
                 status.Print(message, prependTimestamp=False)
 
             status.Unindent()
+            print("")
 
             # Perform NN base learner evaluation using the hyperparameter search range provided by the original paper
             frn_weight_decay_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]  
 
-            status.Print("Performing hyperparameter search for NN (SGD L2 penalty)...")
+            status.Print("Performing hyperparameter search for NN (L2 regulizer)...")
             status.Indent()
             for weight_decay in frn_weight_decay_range:
                 # Create an instance of the feed-forward neural network
@@ -646,8 +682,9 @@ if(argumentSchemeA in args.scheme):
             frl_inverse_reg_range = [.001,.002,.005,.01,.02,.05,.1,.2,.5,1,5,10,20,50,100,200,500,1000,2000,5000]
 
             status.Unindent()
+            print("")
 
-            status.Print("Performing hyperparameter search for Logistic Regression (SGD L2 penalty)...")
+            status.Print("Performing hyperparameter search for Logistic Regression (L2 regulizer)...")
             status.Indent()
             for inverse_reg in frl_inverse_reg_range:
                 # Create an instance of the logistic regression model
@@ -661,10 +698,13 @@ if(argumentSchemeA in args.scheme):
 
                 y_pred = np.asarray([1 if element > 0.5 else 0 for element in frl_output])
 
+                # Print the results
+                message_evaluation = FEBRL.evaluation(a_y_test, y_pred)
+
                 if(args.verbose == True):
-                    message = "weight_decay = {}: {}".format(inverse_reg, message_evaluation)
+                    message = "inverse_reg = {}: {}".format(inverse_reg, message_evaluation)
                 else:
-                    message = "weight_decay = {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(inverse_reg,
+                    message = "inverse_reg = {}: precision: {:06.4f}, sensitivity: {:06.4f}, F-score: {:06.4f}".format(inverse_reg,
                                 message_evaluation["precision"],
                                 message_evaluation["sensitivity"],
                                 message_evaluation["F-score"])
@@ -672,3 +712,4 @@ if(argumentSchemeA in args.scheme):
                 status.Print(message, prependTimestamp=False)
 
             status.Unindent()
+            print("")

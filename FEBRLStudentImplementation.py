@@ -12,11 +12,11 @@ class FEBRLReproducerSVM(nn.Module):
         super(FEBRLReproducerSVM, self).__init__()
 
         # STEP 1
-        # Specify parameters for our PyTorch nn model based upon the analogous
+        # Specify parameters for our PyTorch SVM model based upon the analogous
         # parameters used by the original paper's sklearn SVC
 
-        # PyTorch SVM (nn) concept                       Analogous sklearn SVC parameter
-        # ------------------------                      -------------------------------
+        # PyTorch SVM concept                           Analogous sklearn SVC parameter
+        # -------------------                           -------------------------------
         self.inverse_reg = inverse_reg                  # C (inverse of the regularization strength)
         #                                               # kernel (original paper uses linear, as do we)
 
@@ -43,7 +43,7 @@ class FEBRLReproducerSVM(nn.Module):
         return torch.squeeze(x)
 
     def fit(self, X_train, y_train):
-        # Train the nn with the specified parameters; analogous to sklearn's
+        # Train the SVM with the specified parameters; analogous to sklearn's
         # SVC.fit(...) method
         self.train()
 
@@ -80,7 +80,6 @@ class FEBRLReproducerSVM(nn.Module):
         return self.forward(X_test)
 
 # CS598 Project Code / Neural Network Model / Implementation
-
 class FEBRLReproducerNN(nn.Module):
     def __init__(self, num_features, weight_decay=0.0):
         # Create the our PyTorch nn model
@@ -94,12 +93,12 @@ class FEBRLReproducerNN(nn.Module):
         # ------------------                            -----------------------------------------
         self.optimizer = None                           # solver (optimizer; original paper uses LBFGS, but we will use SGD (defined later) due to PyTorch-sklearn differences)
         self.optimizer_weight_decay = weight_decay      # alpha (L2 penalty/regularization term)
-        self.num_hidden_layer_nodes = 64                # hidden_layer_sizes (tuple of hidden layer nodes)
+        self.num_hidden_layer_nodes = 64                # hidden_layer_sizes (tuple of hidden layer nodes; original paper uses 256, see "[2]" below in Step 2)
         self.activation = F.relu                        # activation (activation function)
         self.random_state = 12345                       # random_state (static, random state for reproducibility)
         #                                               # batch_size (minibatch size; unused in our model)
         #                                               # learning_rate (tells the model to use the provided initial learning rate; n/a to our model)
-        self.optimizer_learning_rate_init = 0.05        # learning_rate_init (initial learning rate)
+        self.optimizer_learning_rate_init = 0.05        # learning_rate_init (initial learning rate; original paper uses 0.001; see "[1]" below)
         self.optimizer_dampening = 0.0                  # power_t (dampening)
         self.num_max_epochs = 3000                      # max_iter (maximum number of epochs when using stochastic optimizers)
         self.shuffle = True                             # shuffle (shuffle samples in each iteration)
@@ -114,8 +113,15 @@ class FEBRLReproducerNN(nn.Module):
         #                                               # beta_2 (parameter for Adam optimizer; specified but unused by original paper)
         #                                               # epsilon (parameter for Adam optimizer; specified but unused by original paper)
 
+        # [1] The original authors' model used a learning rate of 0.001, however, we discovered that with our
+        #     model's adjusted hyperparameters, a slightly larger learning rate resulted in a measurably higher
+        #     sensitivity score of approximately 3%
+
         # STEP 2
         # Define the layers for our nn model
+        # [2] The original authors' model uses a single hidden layer of 256 nodes, but we found this decision
+        #     to be suboptimal; we determined a much more optimal architecture using two hidden layers, with
+        #     64 and 16 nodes, respectively
         self.num_input_features = num_features
 
         self.fc1 = nn.Linear(in_features=self.num_input_features, out_features=self.num_hidden_layer_nodes, bias=False)
@@ -179,7 +185,6 @@ class FEBRLReproducerNN(nn.Module):
         return self.forward(X_test)
 
 # CS598 Project Code / Logistic Regression / Implementation
-
 class FEBRLReproducerLR(nn.Module):
     def __init__(self, num_features, inverse_reg=0.0):
         # Create the our PyTorch logistic regression model
@@ -189,14 +194,14 @@ class FEBRLReproducerLR(nn.Module):
         # Specify parameters for our PyTorch LR model based upon the analogous
         # parameters used by the original paper's sklearn LogisticRegression
 
-        # PyTorch LR (nn) concept                       Analogous sklearn LogisticRegression parameter
-        # -----------------------                       ----------------------------------------------
+        # PyTorch LR concept                            Analogous sklearn LogisticRegression parameter
+        # ------------------                            ----------------------------------------------
         self.inverse_reg = inverse_reg                  # C (inverse of the regularization strength)
         #                                               # penalty (original paper uses L2)
         #                                               # dual (specifies dual formulation; specified but unused by the original paper)
         self.use_bias = True                            # fit_intercept (specified if bias should be added to decision function; original paper specified this as true)
         #                                               # intercept_scaling (intercept scaling, the original paper specifies this as 1)
-        self.num_max_epochs = 10000                      # max_iter (maximum number of epochs when using stochastic optimizers)
+        self.num_max_epochs = 10000                     # max_iter (maximum number of epochs when using stochastic optimizers)
         #                                               # multi_class (specifies class of problem; ours is a binary classification problem)
         #                                               # n_jobs (the number of CPU cores used for parallelization; specified but unused by the original paper)
         self.random_state = 12345                       # random_state (static, random state for reproducibility)
@@ -223,7 +228,7 @@ class FEBRLReproducerLR(nn.Module):
         return torch.squeeze(x)
 
     def fit(self, X_train, y_train):
-        # Train the nn with the specified parameters; analogous to sklearn's
+        # Train the LR with the specified parameters; analogous to sklearn's
         # LogisticRegression.fit(...) method
         self.train()
 
@@ -253,7 +258,7 @@ class FEBRLReproducerLR(nn.Module):
             loss_previous_epoch = loss.item()
 
     def predict(self, X_test):
-        # Test the nn with the specified parameters; analogous to sklearn's
+        # Test the LR with the specified parameters; analogous to sklearn's
         # LogisticRegression.predict(...) method
         self.eval()
         return self.forward(X_test)
