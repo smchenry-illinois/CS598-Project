@@ -3,8 +3,8 @@
 ## Introduction
 This repository contains the code for the CS598 final project of Group 72 in our reproduction of Paper ID 252.
 
-Group 72 Members:  
-Steve McHenry <mchenry7@illinois.edu>
+Group 72 Members: 
+Steve McHenry <mchenry7@illinois.edu>, 
 William Plefka <wplefka2@illinois.edu>
 
 ### Acknowledgements
