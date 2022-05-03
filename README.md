@@ -43,7 +43,7 @@ The model is executed by running `ensemble.py`. In this section, we describe the
 The model may be executed by simply running `ensemble.py` with no additional arguments. This default mode will execute both the reference and student model implementations for both Schemes A and B using preprocessed datasets and pretrained models. This will reproduce the models' evaluation statistics described in our report. Using the preprocessed datasets and pretrained models results in the quickest execution of the models when only a reproduction of the report's statistics is desired.
 
 ### In-Depth Guide
-`ensemble.py` accepts several command line arguments which alter the execution of the program. The arguments are described below, and they are also accessible by running `ensemble.py -h`.
+`ensemble.py` accepts several command line arguments which alter the execution of the program. The arguments are described below, and they are also accessible by running: `ensemble.py -h`
 
 + `-h`, `--help`  
 Displays the argument summary (similar to this listing).
@@ -66,12 +66,14 @@ Specifies that the hyperparameter search specified by the authors will be perfor
 + `-v`, `--verbose`
 Specifies that the statistics output by the program will be verbose, that is, the full output used by the original authors' implementation rather than the console-friendly abbreviated style.
 
+To execute every aspect of this program in single execution (data processing, model training, and hyperameter search), run: `ensemble.py -d -t -e`
+
 The source datasets are provided as files in this repository located in the root directory. Both Schemes A and B contains a training dataset file and test dataset file. The user may choose to substitute their own data files (of  the same file name and compatible format - see the dataset description section in our report) for training of and evaluation by the model. The files are:
 
 + Scheme A training: `febrl3_UNSW.csv`
 + Scheme A test: `febrl4_UNSW.csv`
-+ Scheme B training: `ePBRN_D_dup.csv`
 + Scheme B training: `ePBRN_F_dup.csv`
++ Scheme B test: `ePBRN_D_dup.csv`
 
 ## Ensemble Model Source Files
 In this section, we summarize the source files containing the code used in our reproduction.
@@ -96,8 +98,8 @@ The original authors provided several additional source and graphics files in th
 FEBRL (Scheme A) dataset loading, processing, and execution of reference and student models in Jupyter notebook form. This is the original code provided by the authors (supplemented with our own implementation). The Jupyter notebook format may be amenable to exploration and experimentation.
 + `ePBRN_UNSW_Linkage.ipynb`  
 ePBRN (Scheme B) Jupyter notebook companion to the the previously-described Scheme A notebook.
-+ `Plots.ipynb`  
-Generates the graphical figures used in the original and our reports.
++ `Plots.ipynb` and `plots\*`
+Generates the graphical figures used in the original report to the plot subdirectory.
 + `Rectify_Febrl_Datasets.ipnb`  
 Utilities for reproducing the FEBRL source dataset files provided in this repository.
 + `UNSW Error Generator\*`
