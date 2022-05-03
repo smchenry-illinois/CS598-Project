@@ -240,7 +240,7 @@ if(args.data == True):
 
     if(argumentSchemeB in args.scheme):
         # The following dataset construction routine is adapted from the original authors' implementation
-        # Construct the training and test data sets for Scheme A from file
+        # Construct the training and test data sets for Scheme B from file
         status.Print("Processing Scheme B datasets...")
 
         b_trainset = 'ePBRN_F_dup' 
