@@ -79,7 +79,7 @@ The source datasets are provided as files in this repository located in the root
 + Scheme B test: `ePBRN_D_dup.csv`
 
 #### Preprocessed Datasets and Pretrained Models
-We expand on the original work by including preprocessed datasets and pretrained models. These elements are located in the `pre\` subfolder. Preprocessed datasets and pretrained models are available for both our implementation as well as the reference implementation. `ensemble.py` will automatically manage the loading and use of these elements per the user-provided training and data mode command line arguments. Using these preprocessed/pretrained elements saves measurable time during execution.
+We expand on the original work by including preprocessed datasets and pretrained models. These elements are located in the `pre/` subfolder. Preprocessed datasets and pretrained models are available for both our implementation as well as the reference implementation. `ensemble.py` will automatically manage the loading and use of these elements per the user-provided training and data mode command line arguments. Using these preprocessed/pretrained elements saves measurable time during execution.
 
 ## Ensemble Model Source Files
 In this section, we summarize the source files containing the code used in our reproduction.
@@ -104,9 +104,9 @@ The original authors provided several additional source and graphics files in th
 FEBRL (Scheme A) dataset loading, processing, and execution of reference and student models in Jupyter notebook form. This is the original code provided by the authors (supplemented with our own implementation). The Jupyter notebook format may be amenable to exploration and experimentation.
 + `ePBRN_UNSW_Linkage.ipynb`  
 ePBRN (Scheme B) Jupyter notebook companion to the the previously-described Scheme A notebook.
-+ `Plots.ipynb` and `plots\*`
++ `Plots.ipynb` and `plots/*`
 Generates the graphical figures used in the original report to the plot subdirectory.
 + `Rectify_Febrl_Datasets.ipnb`  
 Utilities for reproducing the FEBRL source dataset files provided in this repository.
-+ `UNSW Error Generator\*`
++ `UNSW Error Generator/*`
 Utilities for reproducing the ePBRN soruce dataset files provided in this repository.
