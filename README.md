@@ -1,4 +1,4 @@
-# Reproduction and Experimentation of Medical-Record-Linkage-Ensemble-Adaptation
+# Reproduction and Experimentation of Medical-Record-Linkage-Ensemble
 
 ## Introduction
 This repository contains the code for the CS598 final project of Group 72 in our reproduction of Paper ID 252.
