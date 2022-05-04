@@ -97,6 +97,33 @@ Contains the class definitions for our own ensemble base learner implementations
 + `StatusPrinter.py`  
 Contains utilities for printing output neatly with timestamps.
 
+## Results
+The following tables contains the resulting output of the models using the provided datasets for both Schemes.
+
+### Scheme A
+| Implementation / Model | Precision Score | Recall Score | F1 Score |
+| --- | --- | --- | --- |
+| Reference / SVM | 94.81% | 99.73% | 97.21% |
+| Reference / NN | 92.73% | 99.51% | 96.00% |
+| Reference / LR | 91.40% | 99.69% | 95.37% |
+| __Reference Bag & Stack__ | 96.13% | 99.47% | 97.77% |
+| Student / SVM | 92.25% | 99.06% | 95.54% |
+| Student / NN | 98.48% | 99.12% | 98.80% |
+| Student / LR | 98.92% | 97.24% | 98.07% |
+| __Student Bag & Stack__ | 99.08% | 97.10% | 98.08% |
+
+### Scheme B
+| Implementation / Model | Precision Score | Recall Score | F1 Score |
+| --- | --- | --- | --- |
+| Reference / SVM | 38.81% | 97.81% | 55.57% |
+| Reference / NN | 71.21% | 96.42% | 81.92% |
+| Reference / LR | 61.04% | 96.61% | 74.81% |
+| __Reference Bag & Stack__ | 73.55% | 96.38% | 83.43% |
+| Student / SVM | 93.22% | 95.73% | 94.46% |
+| Student / NN | 98.23% | 94.15% | 96.15% |
+| Student / LR | 98.36% | 92.04% | 95.09% |
+| __Student Bag & Stack__ | 98.41% | 90.69% | 94.39% |
+
 ## Appendix
 The original authors provided several additional source and graphics files in their original repository which we believe serve as a helpful supplement, so we have chosen to retain them in this repository. We summarize their purpose in this section. For a more in-depth explanation, please see the original work's repository.
 
