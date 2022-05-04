@@ -43,6 +43,8 @@ The model is executed by running `ensemble.py`. In this section, we describe the
 The model may be executed by simply running `ensemble.py` with no additional arguments. This default mode will execute both the reference and student model implementations for both Schemes A and B using preprocessed datasets and pretrained models. This will reproduce the models' evaluation statistics described in our report. Using the preprocessed datasets and pretrained models results in the quickest execution of the models when only a reproduction of the report's statistics is desired.
 
 ### In-Depth Guide
+
+#### Execution
 `ensemble.py` accepts several command line arguments which alter the execution of the program. The arguments are described below, and they are also accessible by running: `ensemble.py -h`
 
 + `-h`, `--help`  
@@ -68,12 +70,16 @@ Specifies that the statistics output by the program will be verbose, that is, th
 
 To execute every aspect of this program in single execution (data processing, model training, and hyperameter search), run: `ensemble.py -d -t -e`
 
+#### Source Datasets
 The source datasets are provided as files in this repository located in the root directory. Both Schemes A and B contains a training dataset file and test dataset file. The user may choose to substitute their own data files (of  the same file name and compatible format - see the dataset description section in our report) for training of and evaluation by the model. The files are:
 
 + Scheme A training: `febrl3_UNSW.csv`
 + Scheme A test: `febrl4_UNSW.csv`
 + Scheme B training: `ePBRN_F_dup.csv`
 + Scheme B test: `ePBRN_D_dup.csv`
+
+#### Preprocessed Datasets and Pretrained Models
+We expand on the original work by including preprocessed datasets and pretrained models. These elements are located in the `pre\` subfolder. Preprocessed datasets and pretrained models are available for both our implementation as well as the reference implementation. `ensemble.py` will automatically manage the loading and use of these elements per the user-provided training and data mode command line arguments. Using these preprocessed/pretrained elements saves measurable time during execution.
 
 ## Ensemble Model Source Files
 In this section, we summarize the source files containing the code used in our reproduction.
