@@ -10,10 +10,10 @@ William Plefka <wplefka2@illinois.edu>
 ### Acknowledgements
 This repository is an adaptation of the work originally performed by Vo et al., "Statistical supervised meta-ensemble algorithm for data linkage", published in Journal of Biomedical Informatics. Though much of the work is our own, we identify where we include or adapt the original authors' code.
 
-Original Authors: 
-Kha Vo <kha.vo@unsw.edu.au>,
-Jitendra Jonnagaddala <jitendra.jonnagaddala@unsw.edu.au>,
-Siaw-Teng Liaw <siaw@unsw.edu.au>.
+Original Authors:  
+Kha Vo <kha.vo@unsw.edu.au>  
+Jitendra Jonnagaddala <jitendra.jonnagaddala@unsw.edu.au>  
+Siaw-Teng Liaw <siaw@unsw.edu.au>
 
 Kha Vo, Jitendra Jonnagaddala, Siaw-Teng Liaw (2019). Statistical supervised meta-ensemble algorithm for medical record linkage. Journal of Biomedical Informatics, 95. [https://doi.org/10.1016/j.jbi.2019.103220](https://doi.org/10.1016/j.jbi.2019.103220)
 
